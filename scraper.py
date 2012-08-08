@@ -1,6 +1,19 @@
 import os, urllib, sys
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
            		
 def getPlatformName(id):
 	platform_data = ET.parse(urllib.urlopen("http://thegamesdb.net/api/GetPlatform.php?id="+id))
@@ -52,7 +65,7 @@ def getGameData(folder,extension,platformID):
 						image.text=""
 
 		KeepSearching = False
-	
+	indent(gamelist)
 	ET.ElementTree(gamelist).write("gamelist.xml")
 	print "Done! List saved on "+os.getcwd()+"/gamelist.xml"
 
