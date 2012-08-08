@@ -7,6 +7,8 @@ def indent(elem, level=0):
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
         for elem in elem:
             indent(elem, level+1)
         if not elem.tail or not elem.tail.strip():
@@ -54,15 +56,11 @@ def getGameData(folder,extension,platformID):
 	
 					if descNode is not None:						
 						desc.text=descNode.text	
-					else:
-						desc.text=""
 					
-					if imgNode is not None:						
+					if imgNode is not None and sys.argv.count("-noimg") is 0:						
 						print "Downloading boxart.."
 						os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+filename+".jpg\"")				
 						image.text=os.path.abspath(filename+".jpg")
-					else:
-						image.text=""
 
 		KeepSearching = False
 	indent(gamelist)
