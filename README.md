@@ -26,11 +26,17 @@ PLATFORMID=7
 ```
 -Run the script.
 
+Parameters
+=====================
+```
+-noimg    Disables boxart downloading.
+```
+
 Platform List
 =====================
 Below is a list of all available platforms in the database and their IDs.
 
-````
+```
 [25] 3DO
 [4911] Amiga
 [23] Arcade
@@ -73,4 +79,4 @@ Below is a list of all available platforms in the database and their IDs.
 [13] Sony PSP
 [6] Super Nintendo (SNES)
 [34] TurboGrafx 16
-````
+```
