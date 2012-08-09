@@ -1,6 +1,11 @@
-import os, urllib, sys, Image
+import os, urllib, sys, Image, argparse
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
+
+parser = argparse.ArgumentParser(description='TheGamesDB scraper for EmulationStation')
+parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts", type=int)
+parser.add_argument("-noimg", help="disables boxart downloading",action='store_true')
+args = parser.parse_args()
 
 def indent(elem, level=0):
     i = "\n" + level*"  "
@@ -57,29 +62,36 @@ def getGameData(folder,extension,platformID):
 					if descNode is not None:						
 						desc.text=descNode.text	
 					
-					if imgNode is not None and sys.argv.count("-noimg") is 0:						
+					if imgNode is not None and args.noimg is False:						
 						print "Downloading boxart.."
 						os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+filename+".jpg\"")				
 						image.text=os.path.abspath(filename+".jpg")
 						
-						maxWidth= 400
-						img=Image.open(filename+".jpg")
-						
-						if (img.size[0]>maxWidth):
-							height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))
-							img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")						
+						if args.w:
+							maxWidth= args.w
+							img=Image.open(filename+".jpg")							
+							if (img.size[0]>maxWidth):
+								height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))								
+								img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")
 						
 		KeepSearching = False
+	
 	indent(gamelist)
 	ET.ElementTree(gamelist).write("gamelist.xml")
 	print "Done! List saved on "+os.getcwd()+"/gamelist.xml"
-
+  
 try:
 	config=open(os.environ['HOME']+"/.emulationstation/es_systems.cfg")
 except IOError as e:
 	sys.exit("Error when reading config file: {0}".format(e.strerror)+"\nExiting..")
 
-print "TheGamesDB scraper for EmulationStation"
+print parser.description
+
+if args.w:
+    print "Max width set: {}px.".format(str(args.w))
+if args.noimg:
+	print "Boxart downloading disabled."
+	
 lines=config.read().splitlines()
 for line in lines:
 	if not line.strip() or line[0]=='#':
@@ -95,5 +107,6 @@ for line in lines:
 				continue
 			else:				
 				getGameData(path,ext,pid)
+				
 config.close()
 print "All done!"
