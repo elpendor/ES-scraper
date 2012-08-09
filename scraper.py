@@ -3,7 +3,7 @@ from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
 parser = argparse.ArgumentParser(description='TheGamesDB scraper for EmulationStation')
-parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts", type=int)
+parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)", type=int)
 parser.add_argument("-noimg", help="disables boxart downloading",action='store_true')
 args = parser.parse_args()
 
