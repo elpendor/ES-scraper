@@ -1,4 +1,4 @@
-import os, urllib, sys
+import os, urllib, sys, Image
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -61,7 +61,14 @@ def getGameData(folder,extension,platformID):
 						print "Downloading boxart.."
 						os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+filename+".jpg\"")				
 						image.text=os.path.abspath(filename+".jpg")
-
+						
+						maxWidth= 400
+						img=Image.open(filename+".jpg")
+						
+						if (img.size[0]>maxWidth):
+							height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))
+							img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")						
+						
 		KeepSearching = False
 	indent(gamelist)
 	ET.ElementTree(gamelist).write("gamelist.xml")
@@ -88,4 +95,5 @@ for line in lines:
 				continue
 			else:				
 				getGameData(path,ext,pid)
+config.close()
 print "All done!"
