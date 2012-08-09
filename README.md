@@ -14,25 +14,6 @@ sudo apt-get install python-imaging
 
 Usage
 =====================
--Open your systems config file ($HOME/.emulationstation/es_systems.cfg) and append the corresponding platform ID to each system:
-
-```
-NAME=MAME
-PATH=~/ROMS/MAME/
-EXTENSION=.zip
-COMMAND=retroarch -L /path/to/core %ROM%
-PLATFORMID=23
-
-NAME=NES
-PATH=~/ROMS/NES/
-EXTENSION=.nes
-COMMAND=retroarch -L /path/to/core %ROM%
-PLATFORMID=7
-```
--Run the script.
-
-Parameters
-=====================
 ```
 usage: scraper.py [-h] [-w value] [-noimg]
 
@@ -43,6 +24,18 @@ optional arguments:
   -w value    defines a maximum width (in pixels) for boxarts
   -noimg      disables boxart downloading
 ```
+
+* Open your systems config file ($HOME/.emulationstation/es_systems.cfg) and append the corresponding [platform ID](#platform-list) to each system:
+
+```
+NAME=NES
+PATH=~/ROMS/NES/
+EXTENSION=.nes
+COMMAND=retroarch -L /path/to/core %ROM%
+PLATFORMID=7
+```
+
+* Run the script.
 
 Platform List
 =====================
