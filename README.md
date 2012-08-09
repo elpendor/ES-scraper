@@ -34,7 +34,14 @@ PLATFORMID=7
 Parameters
 =====================
 ```
--noimg    Disables boxart downloading.
+usage: scraper.py [-h] [-w value] [-noimg]
+
+TheGamesDB scraper for EmulationStation
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -w value    defines a maximum width (in pixels) for boxarts
+  -noimg      disables boxart downloading
 ```
 
 Platform List
