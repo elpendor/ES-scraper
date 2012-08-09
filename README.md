@@ -7,6 +7,11 @@ A quick script written in Python that uses TheGamesDB.net API to get your games 
 
 If you haven't done so, please update ES before running this script.
 
+For image resizing to work, you need to install PIL:
+```
+sudo apt-get install python-imaging
+```
+
 Usage
 =====================
 -Open your systems config file ($HOME/.emulationstation/es_systems.cfg) and append the corresponding platform ID to each system:
