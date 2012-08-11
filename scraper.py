@@ -132,7 +132,7 @@ except IOError as e:
 print parser.description
 
 if args.w:
-    print "Max width set: {}px.".format(str(args.w))
+	print "Max width set: {}px.".format(str(args.w))
 if args.noimg:
 	print "Boxart downloading disabled."
 	
