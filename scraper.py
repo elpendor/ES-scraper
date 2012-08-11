@@ -4,7 +4,9 @@ from xml.etree.ElementTree import Element, SubElement
 
 parser = argparse.ArgumentParser(description='TheGamesDB scraper for EmulationStation')
 parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)", type=int)
-parser.add_argument("-noimg", help="disables boxart downloading",action='store_true')
+parser.add_argument("-noimg", help="disables boxart downloading", action='store_true')
+parser.add_argument("-v", help="verbose output", action='store_true')
+parser.add_argument("-f", help="force re-scraping", action='store_true')
 args = parser.parse_args()
 
 def indent(elem, level=0):
@@ -26,36 +28,77 @@ def getPlatformName(id):
 	platform_data = ET.parse(urllib.urlopen("http://thegamesdb.net/api/GetPlatform.php?id="+id))
 	return platform_data.find('Platform/Platform').text
 
+def exportList(gamelist):
+	if gamelistExists:				
+		for game in gamelist.iter("game"):
+			existinglist.getroot().append(game)
+
+		indent(existinglist.getroot())
+		ET.ElementTree(existinglist.getroot()).write("gamelist.xml")
+		print "Done! {} updated.".format(os.getcwd()+"/gamelist.xml")
+	else:
+		indent(gamelist)				
+		ET.ElementTree(gamelist).write("gamelist.xml")
+		print "Done! List saved on {}".format(os.getcwd()+"/gamelist.xml")
+
 def getGameData(folder,extension,platformID):	
 	KeepSearching = True
+	skipCurrentFile = False
+		
+	global gamelistExists
+	global existinglist
+	gamelistExists = False	
+		
 	gamelist = Element('gameList')	
 	while KeepSearching:        
 		print "Scanning folder..("+folder+")"
 		os.chdir(os.path.expanduser(folder))		
+		
+		if os.path.exists("gamelist.xml"):			
+			existinglist=ET.parse("gamelist.xml")
+			gamelistExists=True
+			if args.v:
+				print "Gamelist for that system already exists: {}".format(os.path.abspath("gamelist.xml"))
+						
 		for files in os.listdir("./"):
 			if files.endswith(extension):			
-				filename = os.path.splitext(files)[0]
+				filename = os.path.splitext(files)[0]								
+				if gamelistExists and not args.f:
+					for game in existinglist.iter("game"):						
+						if game.findtext("path")==os.path.abspath(files):							
+							skipCurrentFile=True
+							if args.v:
+								print "Game \"{}\" already in gamelist. Skipping..".format(files)
+							break
+				
+				if skipCurrentFile:
+					skipCurrentFile=False
+					continue
+					
 				platform= getPlatformName(platformID)
 				URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
 				tree = ET.parse(urllib.urlopen(URL))
-				for node in tree.getiterator('Data'):				
+				
+				if args.v:
+					print "Trying to identify {}..".format(files)				
+				
+				for node in tree.iter('Data'):				
 																		
 					titleNode=node.find("Game/GameTitle")
 					descNode=node.find("Game/Overview")
 					imgBaseURL=node.find("baseImgUrl")
 					imgNode=node.find("Game/Images/boxart[@side='front']")
-																																		
+					
 					if titleNode is not None:
 						game = SubElement(gamelist, 'game')
 						path = SubElement(game, 'path')	
 						name = SubElement(game, 'name')	
 						desc = SubElement(game, 'desc')
-						image = SubElement(game, 'image')																	
-						
+						image = SubElement(game, 'image')																							
 						path.text=os.path.abspath(files)
-						name.text=titleNode.text
-						
+						name.text=titleNode.text						
 						print "Game Found: "+titleNode.text
+						
 					else:
 						break
 	
@@ -72,13 +115,14 @@ def getGameData(folder,extension,platformID):
 							img=Image.open(filename+".jpg")							
 							if (img.size[0]>maxWidth):
 								height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))								
-								img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")
+								img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")							
 						
 		KeepSearching = False
 	
-	indent(gamelist)
-	ET.ElementTree(gamelist).write("gamelist.xml")
-	print "Done! List saved on "+os.getcwd()+"/gamelist.xml"
+	if gamelist.find("game") is None:
+		print "No new games added."
+	else:
+		exportList(gamelist)
   
 try:
 	config=open(os.environ['HOME']+"/.emulationstation/es_systems.cfg")

@@ -15,14 +15,17 @@ sudo apt-get install python-imaging
 Usage
 =====================
 ```
-usage: scraper.py [-h] [-w value] [-noimg]
+usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f]
 
 TheGamesDB scraper for EmulationStation
 
 optional arguments:
   -h, --help  show this help message and exit
-  -w value    defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)
+  -w value    defines a maximum width (in pixels) for boxarts (anything above
+              that will be resized to that value)
   -noimg      disables boxart downloading
+  -v          verbose output
+  -f          force re-scraping
 ```
 
 * Open your systems config file ($HOME/.emulationstation/es_systems.cfg) and append the corresponding [platform ID](#platform-list) to each system:
