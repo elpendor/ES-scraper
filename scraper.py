@@ -29,7 +29,7 @@ def getPlatformName(id):
 	return platform_data.find('Platform/Platform').text
 
 def exportList(gamelist):
-	if gamelistExists:				
+	if gamelistExists and args.f is False:				
 		for game in gamelist.iter("game"):
 			existinglist.getroot().append(game)
 
@@ -88,13 +88,23 @@ def getGameData(folder,extension,platformID):
 					descNode=node.find("Game/Overview")
 					imgBaseURL=node.find("baseImgUrl")
 					imgNode=node.find("Game/Images/boxart[@side='front']")
-					
+					releaseDateNode=node.find("Game/ReleaseDate")
+					publisherNode=node.find("Game/Publisher")
+					devNode=node.find("Game/Developer")
+					genreNode=node.find("Game/Genres")
+										
 					if titleNode is not None:
 						game = SubElement(gamelist, 'game')
 						path = SubElement(game, 'path')	
 						name = SubElement(game, 'name')	
 						desc = SubElement(game, 'desc')
-						image = SubElement(game, 'image')																							
+						image = SubElement(game, 'image')
+						releasedate = SubElement(game, 'releasedate')														
+						publisher=SubElement(game, 'publisher')
+						developer=SubElement(game, 'developer')
+						genres=SubElement(game, 'genres')
+						
+														
 						path.text=os.path.abspath(files)
 						name.text=titleNode.text						
 						print "Game Found: "+titleNode.text
@@ -115,8 +125,22 @@ def getGameData(folder,extension,platformID):
 							img=Image.open(filename+".jpg")							
 							if (img.size[0]>maxWidth):
 								height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))								
-								img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")							
+								img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")	
+					
+					if releaseDateNode is not None:
+						releasedate.text=releaseDateNode.text
+					
+					if publisherNode is not None:
+						publisher.text=publisherNode.text	
 						
+					if devNode is not None:
+						developer.text=devNode.text				
+						
+					if genreNode is not None:
+						for item in genreNode.iter("genre"):
+							newgenre = SubElement(genres, 'genre')
+							newgenre.text=item.text
+
 		KeepSearching = False
 	
 	if gamelist.find("game") is None:
@@ -135,6 +159,8 @@ if args.w:
 	print "Max width set: {}px.".format(str(args.w))
 if args.noimg:
 	print "Boxart downloading disabled."
+if args.f:
+	print "Re-scraping all games.."
 	
 lines=config.read().splitlines()
 for line in lines:
