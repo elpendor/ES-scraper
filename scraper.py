@@ -124,10 +124,11 @@ def getGameData(folder,extension,platformID):
 							
 							if args.w:
 								maxWidth= args.w
-								img=Image.open(filename+".jpg")							
+								img=Image.open(imgpath)							
 								if (img.size[0]>maxWidth):
-									height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))								
-									img.resize((maxWidth,height), Image.ANTIALIAS).save(filename+".jpg")	
+									print "Boxart over {}px. Resizing boxart..".format(maxWidth)
+									height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))							
+									img.resize((maxWidth,height), Image.ANTIALIAS).save(imgpath)	
 						
 						if releaseDateNode is not None:
 							releasedate.text=releaseDateNode.text
