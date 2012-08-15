@@ -62,11 +62,12 @@ def getGameData(folder,extension,platformID):
 						
 		for root, dirs, allfiles in os.walk("./"):
 			for files in allfiles:
-				if files.endswith(extension):			
+				if files.endswith(extension):
+					fullpath=os.path.abspath(os.path.join(root, files))
 					filename = os.path.splitext(files)[0]								
 					if gamelistExists and not args.f:
 						for game in existinglist.iter("game"):						
-							if game.findtext("path")==os.path.abspath(files):							
+							if game.findtext("path")==fullpath:							
 								skipCurrentFile=True
 								if args.v:
 									print "Game \"{}\" already in gamelist. Skipping..".format(files)
@@ -104,9 +105,8 @@ def getGameData(folder,extension,platformID):
 							publisher=SubElement(game, 'publisher')
 							developer=SubElement(game, 'developer')
 							genres=SubElement(game, 'genres')
-							
-															
-							path.text=os.path.abspath(files)
+																						
+							path.text=fullpath
 							name.text=titleNode.text						
 							print "Game Found: "+titleNode.text
 							
@@ -115,11 +115,12 @@ def getGameData(folder,extension,platformID):
 		
 						if descNode is not None:						
 							desc.text=descNode.text	
-						
+																
 						if imgNode is not None and args.noimg is False:						
+							imgpath=os.path.abspath(os.path.join(root, filename+".jpg"))
 							print "Downloading boxart.."
-							os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+filename+".jpg\"")				
-							image.text=os.path.abspath(filename+".jpg")
+							os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+imgpath+"\"")				
+							image.text=imgpath
 							
 							if args.w:
 								maxWidth= args.w
