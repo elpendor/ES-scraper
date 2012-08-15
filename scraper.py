@@ -84,16 +84,16 @@ def getGameData(folder,extension,platformID):
 					if args.v:
 						print "Trying to identify {}..".format(files)				
 					
-					for node in tree.iter('Data'):				
-																			
-						titleNode=node.find("Game/GameTitle")
-						descNode=node.find("Game/Overview")
-						imgBaseURL=node.find("baseImgUrl")
-						imgNode=node.find("Game/Images/boxart[@side='front']")
-						releaseDateNode=node.find("Game/ReleaseDate")
-						publisherNode=node.find("Game/Publisher")
-						devNode=node.find("Game/Developer")
-						genreNode=node.find("Game/Genres")
+					if len(tree.getroot()) > 1: 														
+						nodes=tree.getroot()
+						titleNode=nodes[1].find("GameTitle")
+						descNode=nodes[1].find("Overview")
+						imgBaseURL=nodes.find("baseImgUrl")
+						imgNode=nodes[1].find("Images/boxart[@side='front']")
+						releaseDateNode=nodes[1].find("ReleaseDate")
+						publisherNode=nodes[1].find("Publisher")
+						devNode=nodes[1].find("Developer")
+						genreNode=nodes[1].find("Genres")
 											
 						if titleNode is not None:
 							game = SubElement(gamelist, 'game')
