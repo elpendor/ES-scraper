@@ -152,6 +152,8 @@ def getGameData(folder,extension,platformID):
 		exportList(gamelist)
   
 try:
+	if os.getuid()==0:
+		os.environ['HOME']="/home/"+os.getenv("SUDO_USER")
 	config=open(os.environ['HOME']+"/.emulationstation/es_systems.cfg")
 except IOError as e:
 	sys.exit("Error when reading config file: {0}".format(e.strerror)+"\nExiting..")
