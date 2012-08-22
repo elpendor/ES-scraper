@@ -13,8 +13,6 @@ optional arguments:
   -f          force re-scraping
 ```
 
-thegamesdb.net scraper for EmulationStation
-
 A quick script written in Python that uses TheGamesDB.net API to get your games info and saves it as XML files to be read by EmulationStation.
 
 If you haven't done so, please update ES before running this script.
