@@ -7,7 +7,7 @@ parser.add_argument("-w", metavar="value", help="defines a maximum width (in pix
 parser.add_argument("-noimg", help="disables boxart downloading", action='store_true')
 parser.add_argument("-v", help="verbose output", action='store_true')
 parser.add_argument("-f", help="force re-scraping", action='store_true')
-parser.add_argument("-crc", help="CRC", action='store_true')
+parser.add_argument("-crc", help="CRC scraping", action='store_true')
 args = parser.parse_args()
 
 def crc(fileName):
