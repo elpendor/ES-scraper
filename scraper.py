@@ -1,4 +1,4 @@
-import os, urllib, sys, Image, argparse
+import os, urllib, sys, Image, argparse, zlib
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -7,8 +7,15 @@ parser.add_argument("-w", metavar="value", help="defines a maximum width (in pix
 parser.add_argument("-noimg", help="disables boxart downloading", action='store_true')
 parser.add_argument("-v", help="verbose output", action='store_true')
 parser.add_argument("-f", help="force re-scraping", action='store_true')
+parser.add_argument("-crc", help="CRC", action='store_true')
 args = parser.parse_args()
 
+def crc(fileName):
+    prev = 0
+    for eachLine in open(fileName,"rb"):
+        prev = zlib.crc32(eachLine, prev)
+    return "%X"%(prev & 0xFFFFFFFF)
+    
 def indent(elem, level=0):
     i = "\n" + level*"  "
     if len(elem):
@@ -58,16 +65,16 @@ def getGameData(folder,extension,platformID):
 			existinglist=ET.parse("gamelist.xml")
 			gamelistExists=True
 			if args.v:
-				print "Gamelist for that system already exists: {}".format(os.path.abspath("gamelist.xml"))
+				print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
 						
 		for root, dirs, allfiles in os.walk("./"):
 			for files in allfiles:
 				if files.endswith(extension):
-					fullpath=os.path.abspath(os.path.join(root, files))
+					filepath=os.path.abspath(os.path.join(root, files))
 					filename = os.path.splitext(files)[0]								
 					if gamelistExists and not args.f:
 						for game in existinglist.iter("game"):						
-							if game.findtext("path")==fullpath:							
+							if game.findtext("path")==filepath:							
 								skipCurrentFile=True
 								if args.v:
 									print "Game \"{}\" already in gamelist. Skipping..".format(files)
@@ -76,24 +83,45 @@ def getGameData(folder,extension,platformID):
 					if skipCurrentFile:
 						skipCurrentFile=False
 						continue
-						
-					platform= getPlatformName(platformID)
-					URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
+															
+					if args.crc:	
+						if args.v:
+							try:
+								print "CRC for {0}: ".format(files)+crc(filepath)
+							except zlib.error as e:
+								print e.strerror						
+						URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crc(filepath)
+					else:
+						platform= getPlatformName(platformID)
+						URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
+					
 					tree = ET.parse(urllib.urlopen(URL))
 					
 					if args.v:
 						print "Trying to identify {}..".format(files)				
 					
 					if len(tree.getroot()) > 1: 														
-						nodes=tree.getroot()
-						titleNode=nodes[1].find("GameTitle")
-						descNode=nodes[1].find("Overview")
-						imgBaseURL=nodes.find("baseImgUrl")
-						imgNode=nodes[1].find("Images/boxart[@side='front']")
-						releaseDateNode=nodes[1].find("ReleaseDate")
-						publisherNode=nodes[1].find("Publisher")
-						devNode=nodes[1].find("Developer")
-						genreNode=nodes[1].find("Genres")
+						nodes=tree.getroot()						
+						if args.crc:
+							if nodes.findtext("games"):
+								titleNode=nodes[2][0].find("title")
+								descNode=nodes[2][0].find("description")
+								imgNode=nodes[2][0].find("box_front")
+								releaseDateNode=None
+								publisherNode=None
+								devNode=nodes[2][0].find("developer")
+								genreNode=nodes[2][0].find("genre")
+							else:
+								break
+						else:
+							titleNode=nodes[1].find("GameTitle")
+							descNode=nodes[1].find("Overview")
+							imgBaseURL=nodes.find("baseImgUrl")
+							imgNode=nodes[1].find("Images/boxart[@side='front']")
+							releaseDateNode=nodes[1].find("ReleaseDate")
+							publisherNode=nodes[1].find("Publisher")
+							devNode=nodes[1].find("Developer")
+							genreNode=nodes[1].find("Genres")
 											
 						if titleNode is not None:
 							game = SubElement(gamelist, 'game')
@@ -106,7 +134,7 @@ def getGameData(folder,extension,platformID):
 							developer=SubElement(game, 'developer')
 							genres=SubElement(game, 'genres')
 																						
-							path.text=fullpath
+							path.text=filepath
 							name.text=titleNode.text						
 							print "Game Found: "+titleNode.text
 							
@@ -116,10 +144,14 @@ def getGameData(folder,extension,platformID):
 						if descNode is not None:						
 							desc.text=descNode.text	
 																
-						if imgNode is not None and args.noimg is False:						
+						if imgNode is not None and args.noimg is False:													
 							imgpath=os.path.abspath(os.path.join(root, filename+".jpg"))
+							
 							print "Downloading boxart.."
-							os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+imgpath+"\"")				
+							if args.crc:
+								os.system("wget -q "+imgNode.text+" --output-document=\""+imgpath+"\"")
+							else:
+								os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+imgpath+"\"")							
 							image.text=imgpath
 							
 							if args.w:
@@ -140,15 +172,21 @@ def getGameData(folder,extension,platformID):
 							developer.text=devNode.text				
 							
 						if genreNode is not None:
-							for item in genreNode.iter("genre"):
-								newgenre = SubElement(genres, 'genre')
-								newgenre.text=item.text
+							if args.crc:
+								for item in genreNode.text.split('>'):
+									newgenre = SubElement(genres, 'genre')
+									newgenre.text=item.strip()
+							else:
+								for item in genreNode.iter("genre"):
+									newgenre = SubElement(genres, 'genre')
+									newgenre.text=item.text
 
 		KeepSearching = False
 	
 	if gamelist.find("game") is None:
 		print "No new games added."
 	else:
+		print "{} games added.".format(len(gamelist))
 		exportList(gamelist)
   
 try:
@@ -166,7 +204,11 @@ if args.noimg:
 	print "Boxart downloading disabled."
 if args.f:
 	print "Re-scraping all games.."
-	
+if args.v:
+	print "Verbose mode enabled."
+if args.crc:
+	print "CRC scraping enabled."
+			
 lines=config.read().splitlines()
 for line in lines:
 	if not line.strip() or line[0]=='#':
