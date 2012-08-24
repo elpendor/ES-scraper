@@ -1,9 +1,9 @@
-ES-thegamesdb-scraper
+ES-scraper
 =====================
 ```
 usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f] [-crc]
 
-TheGamesDB scraper for EmulationStation
+A scraper for EmulationStation
 
 optional arguments:
   -h, --help  show this help message and exit
