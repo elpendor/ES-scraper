@@ -3,7 +3,7 @@ ES-scraper
 ```
 usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f] [-crc]
 
-A scraper for EmulationStation
+ES-scraper, a scraper for EmulationStation
 
 optional arguments:
   -h, --help  show this help message and exit
