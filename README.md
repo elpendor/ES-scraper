@@ -1,19 +1,21 @@
 ES-thegamesdb-scraper
 =====================
 ```
-usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f]
+usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f] [-crc]
 
 TheGamesDB scraper for EmulationStation
 
 optional arguments:
   -h, --help  show this help message and exit
-  -w value    defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)
+  -w value    defines a maximum width (in pixels) for boxarts (anything above
+              that will be resized to that value)
   -noimg      disables boxart downloading
   -v          verbose output
   -f          force re-scraping
+  -crc        CRC scraping
 ```
 
-A quick script written in Python that uses TheGamesDB.net API to get your games info and saves it as XML files to be read by EmulationStation.
+Quick script written in Python that uses various online sources to scrape artwork and game info and saves it as XML files to be read by EmulationStation.
 
 If you haven't done so, please update ES before running this script.
 
