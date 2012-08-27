@@ -1,7 +1,7 @@
 ES-scraper
 =====================
 ```
-usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f] [-crc]
+usage: scraper.py [-h] [-w value] [-noimg] [-v] [-f] [-crc] [-p]
 
 ES-scraper, a scraper for EmulationStation
 
@@ -13,6 +13,7 @@ optional arguments:
   -v          verbose output
   -f          force re-scraping
   -crc        CRC scraping
+  -p          partial scraping
 ```
 
 Quick script written in Python that uses various online sources to scrape artwork and game info and saves it as XML files to be read by EmulationStation.
