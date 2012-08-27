@@ -8,8 +8,32 @@ parser.add_argument("-noimg", help="disables boxart downloading", action='store_
 parser.add_argument("-v", help="verbose output", action='store_true')
 parser.add_argument("-f", help="force re-scraping", action='store_true')
 parser.add_argument("-crc", help="CRC scraping", action='store_true')
+parser.add_argument("-p", help="partial scraping", action='store_true')
 args = parser.parse_args()
 
+def readConfig(file):
+	lines=config.read().splitlines()
+	systems=[]
+	for line in lines:
+		if not line.strip() or line[0]=='#':
+			continue
+		else:
+			if "NAME=" in line:
+				name=line.split('=')[1]
+			if "PATH=" in line:
+				path=line.split('=')[1]
+			elif "EXTENSION" in line:
+				ext=line.split('=')[1]
+			elif "PLATFORMID" in line:
+				pid=line.split('=')[1]
+				if not pid:
+					continue
+				else:				
+					system=(name,path,ext,pid)
+					systems.append(system)
+	config.close()
+	return systems
+	
 def crc(fileName):
     prev = 0
     for eachLine in open(fileName,"rb"):
@@ -196,6 +220,7 @@ try:
 except IOError as e:
 	sys.exit("Error when reading config file: {0}".format(e.strerror)+"\nExiting..")
 
+ES_systems=readConfig(config)	
 print parser.description
 
 if args.w:
@@ -208,22 +233,14 @@ if args.v:
 	print "Verbose mode enabled."
 if args.crc:
 	print "CRC scraping enabled."
-			
-lines=config.read().splitlines()
-for line in lines:
-	if not line.strip() or line[0]=='#':
-		continue
-	else:
-		if "PATH=" in line:
-			path =line.split('=')[1]		
-		elif "EXTENSION" in line:
-			ext=line.split('=')[1]
-		elif "PLATFORMID" in line:
-			pid=line.split('=')[1]
-			if not pid:
-				continue
-			else:				
-				getGameData(path,ext,pid)
-				
-config.close()
+if args.p:
+	print "Partial scraping enabled. Systems found:"			
+	for i,v in enumerate(ES_systems):
+		print "[{0}] {1}".format(i,v[0])	
+	var = int(raw_input("System ID: "))
+	getGameData(ES_systems[var][1],ES_systems[var][2],ES_systems[var][3])
+else:
+	for i,v in enumerate(ES_systems):
+		getGameData(ES_systems[i][1],ES_systems[i][2],ES_systems[i][3])
+		
 print "All done!"
