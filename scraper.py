@@ -1,4 +1,4 @@
-import os, urllib, sys, Image, argparse, zlib
+import os, urllib, sys, Image, argparse, zlib, unicodedata, mimetypes
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -11,6 +11,9 @@ parser.add_argument("-crc", help="CRC scraping", action='store_true')
 parser.add_argument("-p", help="partial scraping", action='store_true')
 args = parser.parse_args()
 
+def normalize(s):
+   return ''.join((c for c in unicodedata.normalize('NFKD', unicode(s)) if unicodedata.category(c) != 'Mn'))
+    
 def readConfig(file):
 	lines=config.read().splitlines()
 	systems=[]
@@ -159,18 +162,17 @@ def getGameData(folder,extension,platformID):
 							genres=SubElement(game, 'genres')
 																						
 							path.text=filepath
-							name.text=titleNode.text						
+							name.text=normalize(titleNode.text)
 							print "Game Found: "+titleNode.text
 							
 						else:
 							break
 		
 						if descNode is not None:						
-							desc.text=descNode.text	
+							desc.text=normalize(descNode.text)
 																
 						if imgNode is not None and args.noimg is False:													
-							imgpath=os.path.abspath(os.path.join(root, filename+".jpg"))
-							
+							imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(imgNode.text)[1]))
 							print "Downloading boxart.."
 							if args.crc:
 								os.system("wget -q "+imgNode.text+" --output-document=\""+imgpath+"\"")
