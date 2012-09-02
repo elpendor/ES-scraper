@@ -1,4 +1,4 @@
-import os, urllib, sys, Image, argparse, zlib, unicodedata, mimetypes
+import os, urllib, sys, Image, argparse, zlib, unicodedata
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
