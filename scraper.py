@@ -75,7 +75,7 @@ def exportList(gamelist):
 		ET.ElementTree(gamelist).write("gamelist.xml")
 		print "Done! List saved on {}".format(os.getcwd()+"/gamelist.xml")
 
-def getGameData(folder,extension,platformID):	
+def getGameData(folder,extension,platformID):
 	KeepSearching = True
 	skipCurrentFile = False
 		
@@ -96,7 +96,7 @@ def getGameData(folder,extension,platformID):
 						
 		for root, dirs, allfiles in os.walk("./"):
 			for files in allfiles:
-				if files.endswith(extension):
+				if files.endswith(tuple(extension.split(' '))):
 					filepath=os.path.abspath(os.path.join(root, files))
 					filename = os.path.splitext(files)[0]								
 					if gamelistExists and not args.f:
