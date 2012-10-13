@@ -171,7 +171,7 @@ def getGameData(folder,extension,platformID):
 						if descNode is not None:						
 							desc.text=normalize(descNode.text)
 																
-						if imgNode is not None and args.noimg is False:													
+						if imgNode.text is not None and args.noimg is False:													
 							imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(imgNode.text)[1]))
 							print "Downloading boxart.."
 							if args.crc:
