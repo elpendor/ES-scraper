@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 def normalize(s):
    return ''.join((c for c in unicodedata.normalize('NFKD', unicode(s)) if unicodedata.category(c) != 'Mn'))
-    
+
 def readConfig(file):
 	lines=config.read().splitlines()
 	systems=[]
@@ -36,13 +36,13 @@ def readConfig(file):
 					systems.append(system)
 	config.close()
 	return systems
-	
+
 def crc(fileName):
     prev = 0
     for eachLine in open(fileName,"rb"):
         prev = zlib.crc32(eachLine, prev)
     return "%X"%(prev & 0xFFFFFFFF)
-    
+
 def indent(elem, level=0):
     i = "\n" + level*"  "
     if len(elem):
@@ -57,7 +57,7 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
-           		
+  		
 def getPlatformName(id):
 	platform_data = ET.parse(urllib.urlopen("http://thegamesdb.net/api/GetPlatform.php?id="+id))
 	return platform_data.find('Platform/Platform').text
@@ -75,139 +75,194 @@ def exportList(gamelist):
 		ET.ElementTree(gamelist).write("gamelist.xml")
 		print "Done! List saved on {}".format(os.getcwd()+"/gamelist.xml")
 
-def getGameData(folder,extension,platformID):
-	KeepSearching = True
-	skipCurrentFile = False
+def getFiles(base):
+	dict=set([])
+	for files in sorted(os.listdir(base)):
+		if files.endswith(tuple(ES_systems[var][2].split(' '))):
+			filepath=os.path.abspath(os.path.join(base, files))
+			dict.add(filepath)
+	return dict
+
+def getGameInfo(file,platformID):											
+	filename=os.path.splitext(file)[0]
+	if args.crc:
+		crcvalue=crc(os.path.abspath(file))
+		if args.v:
+			try:
+				print "CRC for {0}: ".format(file)+crcvalue
+			except zlib.error as e:
+				print e.strerror						
+		URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
+	else:
+		platform= getPlatformName(platformID)
+		URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
+	
+	return ET.parse(urllib.urlopen(URL))
+
+def getText(node):
+	return node.text if node is not None else None
+
+def getTitle(nodes):
+	if args.crc:
+		return getText(nodes.find("title"))		
+	else:
+		return getText(nodes.find("GameTitle"))
+		
+def getDescription(nodes):
+	if args.crc:
+		return getText(nodes.find("description"))
+	else:
+		return getText(nodes.find("Overview"))
+	
+def getImage(nodes):
+	if args.crc:
+		return getText(nodes.find("box_front"))
+	else:
+		return getText(nodes.find("Images/boxart[@side='front']"))
+	
+def getTGDBImgBase(nodes):
+	return nodes.find("baseImgUrl").text
+		
+def getRelDate(nodes):
+	if args.crc:
+		return None
+	else:
+		return getText(nodes.find("ReleaseDate"))
+
+def getPublisher(nodes):
+	if args.crc:
+		return None
+	else:
+		return getText(nodes.find("Publisher"))
+
+def getDeveloper(nodes):
+	if args.crc:
+		return getText(nodes.find("developer"))
+	else:
+		return getText(nodes.find("Developer"))
+
+def getGenres(nodes):
+	genres=[]
+	if args.crc:		
+		for item in getText(nodes.find("genre")).split('>'):
+			genres.append(item)
+	else:
+		for item in nodes.find("Genres").iter("genre"):
+			genres.append(item.text)	
+	
+	return genres if len(genres)>0 else None
+	
+def resizeImage(img,output):
+	maxWidth= args.w
+	if (img.size[0]>maxWidth):
+		print "Boxart over {}px. Resizing boxart..".format(maxWidth)
+		height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))							
+		img.resize((maxWidth,height), Image.ANTIALIAS).save(output)	
+
+def downloadBoxart(path,output):
+	if args.crc:
+		os.system("wget -q {} --output-document=\"{}\"".format(path,output))
+	else:
+		os.system("wget -q http://thegamesdb.net/banners/{} --output-document=\"{}\"".format(path,output))							
+def skipGame(list, filepath):
+	for game in list.iter("game"):						
+		if game.findtext("path")==filepath:							
+			if args.v:
+				print "Game \"{}\" already in gamelist. Skipping..".format(os.path.basename(filepath))			
+			return True
+				
+def scanFiles(SystemInfo):
+	folder=SystemInfo[1]
+	extension=SystemInfo[2]
+	platformID=	SystemInfo[3]
 		
 	global gamelistExists
 	global existinglist
 	gamelistExists = False	
 		
-	gamelist = Element('gameList')	
-	while KeepSearching:        
-		print "Scanning folder..("+folder+")"
-		os.chdir(os.path.expanduser(folder))		
-		
-		if os.path.exists("gamelist.xml"):			
-			existinglist=ET.parse("gamelist.xml")
-			gamelistExists=True
-			if args.v:
-				print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
-						
-		for root, dirs, allfiles in os.walk("./"):
-			for files in allfiles:
-				if files.endswith(tuple(extension.split(' '))):
-					filepath=os.path.abspath(os.path.join(root, files))
-					filename = os.path.splitext(files)[0]								
-					if gamelistExists and not args.f:
-						for game in existinglist.iter("game"):						
-							if game.findtext("path")==filepath:							
-								skipCurrentFile=True
-								if args.v:
-									print "Game \"{}\" already in gamelist. Skipping..".format(files)
-								break
+	gamelist = Element('gameList')	  
+	print "Scanning folder..("+folder+")"
+	os.chdir(os.path.expanduser(folder))		
+	
+	if os.path.exists("gamelist.xml"):			
+		existinglist=ET.parse("gamelist.xml")
+		gamelistExists=True
+		if args.v:
+			print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
 					
-					if skipCurrentFile:
-						skipCurrentFile=False
-						continue
-															
-					if args.crc:	
-						if args.v:
-							try:
-								print "CRC for {0}: ".format(files)+crc(filepath)
-							except zlib.error as e:
-								print e.strerror						
-						URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crc(filepath)
-					else:
-						platform= getPlatformName(platformID)
-						URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
-					
-					tree = ET.parse(urllib.urlopen(URL))
-					
-					if args.v:
-						print "Trying to identify {}..".format(files)				
-					
-					if len(tree.getroot()) > 1: 														
-						nodes=tree.getroot()						
-						if args.crc:
-							if nodes.findtext("games"):
-								titleNode=nodes[2][0].find("title")
-								descNode=nodes[2][0].find("description")
-								imgNode=nodes[2][0].find("box_front")
-								releaseDateNode=None
-								publisherNode=None
-								devNode=nodes[2][0].find("developer")
-								genreNode=nodes[2][0].find("genre")
-							else:
-								break
-						else:
-							titleNode=nodes[1].find("GameTitle")
-							descNode=nodes[1].find("Overview")
-							imgBaseURL=nodes.find("baseImgUrl")
-							imgNode=nodes[1].find("Images/boxart[@side='front']")
-							releaseDateNode=nodes[1].find("ReleaseDate")
-							publisherNode=nodes[1].find("Publisher")
-							devNode=nodes[1].find("Developer")
-							genreNode=nodes[1].find("Genres")
-											
-						if titleNode is not None:
-							game = SubElement(gamelist, 'game')
-							path = SubElement(game, 'path')	
-							name = SubElement(game, 'name')	
-							desc = SubElement(game, 'desc')
-							image = SubElement(game, 'image')
-							releasedate = SubElement(game, 'releasedate')														
-							publisher=SubElement(game, 'publisher')
-							developer=SubElement(game, 'developer')
-							genres=SubElement(game, 'genres')
-																						
-							path.text=filepath
-							name.text=normalize(titleNode.text)
-							print "Game Found: "+titleNode.text
-							
-						else:
-							break
-		
-						if descNode is not None:						
-							desc.text=normalize(descNode.text)
-																
-						if imgNode.text is not None and args.noimg is False:													
-							imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(imgNode.text)[1]))
-							print "Downloading boxart.."
-							if args.crc:
-								os.system("wget -q "+imgNode.text+" --output-document=\""+imgpath+"\"")
-							else:
-								os.system("wget -q "+imgBaseURL.text+imgNode.text+" --output-document=\""+imgpath+"\"")							
-							image.text=imgpath
-							
-							if args.w:
-								maxWidth= args.w
-								img=Image.open(imgpath)							
-								if (img.size[0]>maxWidth):
-									print "Boxart over {}px. Resizing boxart..".format(maxWidth)
-									height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))							
-									img.resize((maxWidth,height), Image.ANTIALIAS).save(imgpath)	
-						
-						if releaseDateNode is not None:
-							releasedate.text=releaseDateNode.text
-						
-						if publisherNode is not None:
-							publisher.text=publisherNode.text	
-							
-						if devNode is not None:
-							developer.text=devNode.text				
-							
-						if genreNode is not None:
-							if args.crc:
-								for item in genreNode.text.split('>'):
-									newgenre = SubElement(genres, 'genre')
-									newgenre.text=item.strip()
-							else:
-								for item in genreNode.iter("genre"):
-									newgenre = SubElement(genres, 'genre')
-									newgenre.text=item.text
+	for root, dirs, allfiles in os.walk("./"):
+		allfiles.sort()
+		for files in allfiles:
+			if files.endswith(tuple(extension.split(' '))):
+				filepath=os.path.abspath(os.path.join(root, files))
+				filename = os.path.splitext(files)[0]								
 
-		KeepSearching = False
+				if gamelistExists and not args.f:
+					if skipGame(existinglist,filepath):
+						continue
+													
+				print "Trying to identify {}..".format(files)				
+													
+				nodes=getGameInfo(files, platformID).getroot()
+											
+				if args.crc and nodes.find("games") is not None :
+					result=nodes[2][0]
+				elif nodes.find("Game") is not None:
+					result=nodes[1]
+				else:
+					continue
+				
+				str_title=getTitle(result)
+				str_des=getDescription(result)
+				str_img=getImage(result)
+				str_rd=getRelDate(result)
+				str_pub=getPublisher(result)
+				str_dev=getDeveloper(result)
+				lst_genres=getGenres(result)				
+					
+				if str_title is not None:			
+					game = SubElement(gamelist, 'game')
+					path = SubElement(game, 'path')	
+					name = SubElement(game, 'name')	
+					desc = SubElement(game, 'desc')
+					image = SubElement(game, 'image')
+					releasedate = SubElement(game, 'releasedate')														
+					publisher=SubElement(game, 'publisher')
+					developer=SubElement(game, 'developer')
+					genres=SubElement(game, 'genres')
+					
+					path.text=filepath
+					name.text=normalize(str_title)
+					print "Game Found: "+str_title
+					
+				else:
+					break
+	
+				if str_des is not None:						
+					desc.text=normalize(str_des)
+														
+				if str_img is not None and args.noimg is False:		
+					imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
+					print "Downloading boxart.."						
+					downloadBoxart(str_img,imgpath)
+					image.text=imgpath
+					
+					if args.w:													
+						resizeImage(Image.open(imgpath),imgpath)							
+				
+				if str_rd is not None:
+					releasedate.text=str_rd
+				
+				if str_pub is not None:
+					publisher.text=str_pub
+					
+				if str_dev is not None:
+					developer.text=str_dev
+					
+				if lst_genres is not None:
+					for genre in lst_genres:
+						newgenre = SubElement(genres, 'genre')
+						newgenre.text=genre.strip()
 	
 	if gamelist.find("game") is None:
 		print "No new games added."
@@ -240,9 +295,9 @@ if args.p:
 	for i,v in enumerate(ES_systems):
 		print "[{0}] {1}".format(i,v[0])	
 	var = int(raw_input("System ID: "))
-	getGameData(ES_systems[var][1],ES_systems[var][2],ES_systems[var][3])
+	scanFiles(ES_systems[var])
 else:
 	for i,v in enumerate(ES_systems):
-		getGameData(ES_systems[i][1],ES_systems[i][2],ES_systems[i][3])
+		scanFiles(ES_systems[i])
 		
 print "All done!"
