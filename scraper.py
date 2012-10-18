@@ -143,10 +143,10 @@ def getDeveloper(nodes):
 
 def getGenres(nodes):
 	genres=[]
-	if args.crc:		
+	if args.crc and nodes.find("genre") is not None:		
 		for item in getText(nodes.find("genre")).split('>'):
 			genres.append(item)
-	else:
+	elif nodes.find("Genres") is not None:
 		for item in nodes.find("Genres").iter("genre"):
 			genres.append(item.text)	
 	
