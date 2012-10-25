@@ -84,7 +84,7 @@ def getFiles(base):
 	return dict
 
 def getGameInfo(file,platformID):											
-	filename=os.path.splitext(file)[0]
+	filename=re.sub(r'\[.*?\]|\(.*?\)', '', os.path.splitext(file)[0]).strip()
 	if args.crc:
 		crcvalue=crc(os.path.abspath(file))
 		if args.v:
