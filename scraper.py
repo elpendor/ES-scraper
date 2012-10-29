@@ -186,7 +186,12 @@ def scanFiles(SystemInfo):
 		
 	gamelist = Element('gameList')	  
 	print "Scanning folder..("+folder+")"
-	os.chdir(os.path.expanduser(folder))		
+	
+	try:
+		os.chdir(os.path.expanduser(folder))		
+	except OSError as e:
+		print e.strerror
+		return
 	
 	if os.path.exists("gamelist.xml"):			
 		existinglist=ET.parse("gamelist.xml")
