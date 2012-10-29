@@ -97,7 +97,11 @@ def getGameInfo(file,platformID):
 		platform= getPlatformName(platformID)
 		URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
 	
-	return ET.parse(urllib.urlopen(URL))
+	try:
+		return ET.parse(urllib.urlopen(URL))
+	except ET.ParseError:
+		print "Malformed XML found, skipping game.. (source: {})".format(URL)
+		return None
 
 def getText(node):
 	return node.text if node is not None else None
@@ -203,7 +207,12 @@ def scanFiles(SystemInfo):
 													
 				print "Trying to identify {}..".format(files)				
 													
-				nodes=getGameInfo(files, platformID).getroot()
+				data=getGameInfo(files, platformID)
+				
+				if data is None:
+					continue
+				else:
+					nodes=data.getroot()
 											
 				if args.crc and nodes.find("games") is not None :
 					result=nodes[2][0]
