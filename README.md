@@ -11,10 +11,10 @@ optional arguments:
               that will be resized to that value)
   -noimg      disables boxart downloading
   -v          verbose output
-  -f          force re-scraping
+  -f          force re-scraping (ignores and overwrites the current gamelist)
   -crc        CRC scraping
-  -p          partial scraping
-  -m          manual mode
+  -p          partial scraping (per console)
+  -m          manual mode (choose from multiple results)
 ```
 
 Quick script written in Python that uses various online sources to scrape artwork and game info and saves it as XML files to be read by EmulationStation.

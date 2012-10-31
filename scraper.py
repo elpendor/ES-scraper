@@ -6,10 +6,10 @@ parser = argparse.ArgumentParser(description='ES-scraper, a scraper for Emulatio
 parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)", type=int)
 parser.add_argument("-noimg", help="disables boxart downloading", action='store_true')
 parser.add_argument("-v", help="verbose output", action='store_true')
-parser.add_argument("-f", help="force re-scraping", action='store_true')
+parser.add_argument("-f", help="force re-scraping (ignores and overwrites the current gamelist)", action='store_true')
 parser.add_argument("-crc", help="CRC scraping", action='store_true')
-parser.add_argument("-p", help="partial scraping", action='store_true')
-parser.add_argument("-m", help="manual mode", action='store_true')
+parser.add_argument("-p", help="partial scraping (per console)", action='store_true')
+parser.add_argument("-m", help="manual mode (choose from multiple results)", action='store_true')
 args = parser.parse_args()
 
 def normalize(s):
