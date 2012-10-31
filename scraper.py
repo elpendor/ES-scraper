@@ -9,6 +9,7 @@ parser.add_argument("-v", help="verbose output", action='store_true')
 parser.add_argument("-f", help="force re-scraping", action='store_true')
 parser.add_argument("-crc", help="CRC scraping", action='store_true')
 parser.add_argument("-p", help="partial scraping", action='store_true')
+parser.add_argument("-m", help="manual mode", action='store_true')
 args = parser.parse_args()
 
 def normalize(s):
@@ -96,13 +97,24 @@ def getGameInfo(file,platformID):
 	else:
 		platform= getPlatformName(platformID)
 		URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
-	
+
 	try:
-		return ET.parse(urllib.urlopen(URL))
+		data=ET.parse(urllib.urlopen(URL)).getroot()
 	except ET.ParseError:
 		print "Malformed XML found, skipping game.. (source: {})".format(URL)
-		return None
-
+		return None	
+	
+	try:
+		if args.crc and data.find("games/game") is not None:
+			return data.find("games/game")
+		elif data.find("Game") is not None:					
+			return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")			
+		else:
+			return None
+	except:
+		print "Skipping game.."
+		return None			
+	
 def getText(node):
 	return node.text if node is not None else None
 
@@ -168,6 +180,7 @@ def downloadBoxart(path,output):
 		os.system("wget -q {} --output-document=\"{}\"".format(path,output))
 	else:
 		os.system("wget -q http://thegamesdb.net/banners/{} --output-document=\"{}\"".format(path,output))							
+
 def skipGame(list, filepath):
 	for game in list.iter("game"):						
 		if game.findtext("path")==filepath:							
@@ -175,6 +188,15 @@ def skipGame(list, filepath):
 				print "Game \"{}\" already in gamelist. Skipping..".format(os.path.basename(filepath))			
 			return True
 				
+def chooseResult(nodes):
+	results=nodes.findall('Game')
+	if len(results) > 1:
+		for	i,v in enumerate(results):
+			print "[{}] {}".format(i,getTitle(v))
+		return int(raw_input("Select a result (or press Enter to skip): "))
+	else:
+		return 0
+		
 def scanFiles(SystemInfo):
 	folder=SystemInfo[1]
 	extension=SystemInfo[2]
@@ -217,14 +239,7 @@ def scanFiles(SystemInfo):
 				if data is None:
 					continue
 				else:
-					nodes=data.getroot()
-											
-				if args.crc and nodes.find("games") is not None :
-					result=nodes[2][0]
-				elif nodes.find("Game") is not None:
-					result=nodes[1]
-				else:
-					continue
+					result=data
 				
 				str_title=getTitle(result)
 				str_des=getDescription(result)
@@ -308,8 +323,11 @@ if args.p:
 	print "Partial scraping enabled. Systems found:"			
 	for i,v in enumerate(ES_systems):
 		print "[{0}] {1}".format(i,v[0])	
-	var = int(raw_input("System ID: "))
-	scanFiles(ES_systems[var])
+	try:
+		var = int(raw_input("System ID: "))
+		scanFiles(ES_systems[var])
+	except:
+		sys.exit()
 else:
 	for i,v in enumerate(ES_systems):
 		scanFiles(ES_systems[i])

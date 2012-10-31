@@ -14,6 +14,7 @@ optional arguments:
   -f          force re-scraping
   -crc        CRC scraping
   -p          partial scraping
+  -m          manual mode
 ```
 
 Quick script written in Python that uses various online sources to scrape artwork and game info and saves it as XML files to be read by EmulationStation.
