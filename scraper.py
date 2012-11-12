@@ -111,12 +111,12 @@ def getGameInfo(file,platformID):
 			return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")			
 		else:
 			return None
-	except:
-		print "Skipping game.."
+	except Exception, err:
+		print "Skipping game..({})".format(str(err))
 		return None			
 	
 def getText(node):
-	return node.text if node is not None else None
+	return normalize(node.text) if node is not None else None
 
 def getTitle(nodes):
 	if args.crc:
@@ -261,14 +261,14 @@ def scanFiles(SystemInfo):
 					genres=SubElement(game, 'genres')
 					
 					path.text=filepath
-					name.text=normalize(str_title)
+					name.text=str_title
 					print "Game Found: "+str_title
 					
 				else:
 					break
 	
 				if str_des is not None:						
-					desc.text=normalize(str_des)
+					desc.text=str_des
 														
 				if str_img is not None and args.noimg is False:		
 					imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
