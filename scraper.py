@@ -263,9 +263,6 @@ def scanFiles(SystemInfo):
 					path.text=filepath
 					name.text=str_title
 					print "Game Found: "+str_title
-					
-				else:
-					break
 	
 				if str_des is not None:						
 					desc.text=str_des
@@ -276,9 +273,12 @@ def scanFiles(SystemInfo):
 					downloadBoxart(str_img,imgpath)
 					image.text=imgpath
 					
-					if args.w:													
-						resizeImage(Image.open(imgpath),imgpath)							
-				
+					if args.w:
+						try:
+							resizeImage(Image.open(imgpath),imgpath)							
+						except:
+							print "Image resize error"
+											
 				if str_rd is not None:
 					releasedate.text=str_rd
 				
