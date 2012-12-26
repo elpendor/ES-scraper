@@ -216,10 +216,15 @@ def scanFiles(SystemInfo):
 		return
 	
 	if os.path.exists("gamelist.xml"):			
-		existinglist=ET.parse("gamelist.xml")
-		gamelistExists=True
-		if args.v:
-			print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
+		try:
+			existinglist=ET.parse("gamelist.xml")
+			gamelistExists=True
+			if args.v:
+				print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
+		except:
+			gamelistExists=False
+			if args.v:
+				print "There was an error parsing the list o file is empty"
 					
 	for root, dirs, allfiles in os.walk("./"):
 		allfiles.sort()
