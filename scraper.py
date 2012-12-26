@@ -223,8 +223,7 @@ def scanFiles(SystemInfo):
 				print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
 		except:
 			gamelistExists=False
-			if args.v:
-				print "There was an error parsing the list o file is empty"
+			print "There was an error parsing the list or file is empty"
 					
 	for root, dirs, allfiles in os.walk("./"):
 		allfiles.sort()
