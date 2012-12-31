@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os, urllib, sys, Image, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
@@ -10,6 +11,7 @@ parser.add_argument("-f", help="force re-scraping (ignores and overwrites the cu
 parser.add_argument("-crc", help="CRC scraping", action='store_true')
 parser.add_argument("-p", help="partial scraping (per console)", action='store_true')
 parser.add_argument("-m", help="manual mode (choose from multiple results)", action='store_true')
+parser.add_argument('-newpath', help="gamelist & boxart are written in $HOME/.emulationstation/%%NAME%%/", action='store_true')
 args = parser.parse_args()
 
 def normalize(s):
@@ -32,7 +34,7 @@ def readConfig(file):
 				pid=line.split('=')[1]
 				if not pid:
 					continue
-				else:				
+				else:
 					system=(name,path,ext,pid)
 					systems.append(system)
 	config.close()
@@ -64,7 +66,7 @@ def getPlatformName(id):
 	return platform_data.find('Platform/Platform').text
 
 def exportList(gamelist):
-	if gamelistExists and args.f is False:				
+	if gamelistExists and args.f is False:
 		for game in gamelist.iter("game"):
 			existinglist.getroot().append(game)
 
@@ -72,7 +74,7 @@ def exportList(gamelist):
 		ET.ElementTree(existinglist.getroot()).write("gamelist.xml")
 		print "Done! {} updated.".format(os.getcwd()+"/gamelist.xml")
 	else:
-		indent(gamelist)				
+		indent(gamelist)
 		ET.ElementTree(gamelist).write("gamelist.xml")
 		print "Done! List saved on {}".format(os.getcwd()+"/gamelist.xml")
 
@@ -84,7 +86,7 @@ def getFiles(base):
 			dict.add(filepath)
 	return dict
 
-def getGameInfo(file,platformID):											
+def getGameInfo(file,platformID):
 	filename=re.sub(r'\[.*?\]|\(.*?\)', '', os.path.splitext(file)[0]).strip()
 	if args.crc:
 		crcvalue=crc(os.path.abspath(file))
@@ -92,7 +94,7 @@ def getGameInfo(file,platformID):
 			try:
 				print "CRC for {0}: ".format(file)+crcvalue
 			except zlib.error as e:
-				print e.strerror						
+				print e.strerror
 		URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
 	else:
 		platform= getPlatformName(platformID)
@@ -102,43 +104,43 @@ def getGameInfo(file,platformID):
 		data=ET.parse(urllib.urlopen(URL)).getroot()
 	except ET.ParseError:
 		print "Malformed XML found, skipping game.. (source: {})".format(URL)
-		return None	
-	
+		return None
+
 	try:
 		if args.crc and data.find("games/game") is not None:
 			return data.find("games/game")
-		elif data.find("Game") is not None:					
-			return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")			
+		elif data.find("Game") is not None:
+			return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")
 		else:
 			return None
 	except Exception, err:
 		print "Skipping game..({})".format(str(err))
-		return None			
-	
+		return None
+
 def getText(node):
 	return normalize(node.text) if node is not None else None
 
 def getTitle(nodes):
 	if args.crc:
-		return getText(nodes.find("title"))		
+		return getText(nodes.find("title"))
 	else:
 		return getText(nodes.find("GameTitle"))
-		
+
 def getDescription(nodes):
 	if args.crc:
 		return getText(nodes.find("description"))
 	else:
 		return getText(nodes.find("Overview"))
-	
+
 def getImage(nodes):
 	if args.crc:
 		return getText(nodes.find("box_front"))
 	else:
 		return getText(nodes.find("Images/boxart[@side='front']"))
-	
+
 def getTGDBImgBase(nodes):
 	return nodes.find("baseImgUrl").text
-		
+
 def getRelDate(nodes):
 	if args.crc:
 		return None
@@ -159,35 +161,35 @@ def getDeveloper(nodes):
 
 def getGenres(nodes):
 	genres=[]
-	if args.crc and nodes.find("genre") is not None:		
+	if args.crc and nodes.find("genre") is not None:
 		for item in getText(nodes.find("genre")).split('>'):
 			genres.append(item)
 	elif nodes.find("Genres") is not None:
 		for item in nodes.find("Genres").iter("genre"):
-			genres.append(item.text)	
-	
+			genres.append(item.text)
+
 	return genres if len(genres)>0 else None
-	
+
 def resizeImage(img,output):
 	maxWidth= args.w
 	if (img.size[0]>maxWidth):
 		print "Boxart over {}px. Resizing boxart..".format(maxWidth)
-		height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))							
-		img.resize((maxWidth,height), Image.ANTIALIAS).save(output)	
+		height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))
+		img.resize((maxWidth,height), Image.ANTIALIAS).save(output)
 
 def downloadBoxart(path,output):
 	if args.crc:
 		os.system("wget -q {} --output-document=\"{}\"".format(path,output))
 	else:
-		os.system("wget -q http://thegamesdb.net/banners/{} --output-document=\"{}\"".format(path,output))							
+		os.system("wget -q http://thegamesdb.net/banners/{} --output-document=\"{}\"".format(path,output))
 
 def skipGame(list, filepath):
-	for game in list.iter("game"):						
-		if game.findtext("path")==filepath:							
+	for game in list.iter("game"):
+		if game.findtext("path")==filepath:
 			if args.v:
-				print "Game \"{}\" already in gamelist. Skipping..".format(os.path.basename(filepath))			
+				print "Game \"{}\" already in gamelist. Skipping..".format(os.path.basename(filepath))
 			return True
-				
+
 def chooseResult(nodes):
 	results=nodes.findall('Game')
 	if len(results) > 1:
@@ -196,26 +198,34 @@ def chooseResult(nodes):
 		return int(raw_input("Select a result (or press Enter to skip): "))
 	else:
 		return 0
-		
+
 def scanFiles(SystemInfo):
-	folder=SystemInfo[1]
+	name=SystemInfo[0]
+	folderRoms=SystemInfo[1]
 	extension=SystemInfo[2]
 	platformID=	SystemInfo[3]
-		
+
 	global gamelistExists
 	global existinglist
 	gamelistExists = False	
-		
+
 	gamelist = Element('gameList')	  
-	print "Scanning folder..("+folder+")"
-	
+	folderRoms = os.path.expanduser(folderRoms)
+
+	if args.newpath is False:
+		destinationFolder = folderRoms;
+	else:
+		destinationFolder = os.environ['HOME']+"/.emulationstation/"+name+"/"
+
 	try:
-		os.chdir(os.path.expanduser(folder))		
+		os.chdir(destinationFolder)
 	except OSError as e:
-		print e.strerror
+		print destinationFolder + " : " + e.strerror
 		return
-	
-	if os.path.exists("gamelist.xml"):			
+
+	print "Scanning folder..("+folderRoms+")"
+
+	if os.path.exists("gamelist.xml"):
 		try:
 			existinglist=ET.parse("gamelist.xml")
 			gamelistExists=True
@@ -224,85 +234,90 @@ def scanFiles(SystemInfo):
 		except:
 			gamelistExists=False
 			print "There was an error parsing the list or file is empty"
-					
-	for root, dirs, allfiles in os.walk("./"):
+
+	for root, dirs, allfiles in os.walk(folderRoms):
 		allfiles.sort()
 		for files in allfiles:
 			if files.endswith(tuple(extension.split(' '))):
 				filepath=os.path.abspath(os.path.join(root, files))
-				filename = os.path.splitext(files)[0]								
+				filename = os.path.splitext(files)[0]
 
 				if gamelistExists and not args.f:
 					if skipGame(existinglist,filepath):
 						continue
-													
-				print "Trying to identify {}..".format(files)				
-													
+
+				print "Trying to identify {}..".format(files)
+
 				data=getGameInfo(files, platformID)
 				
 				if data is None:
 					continue
 				else:
 					result=data
-				
+
 				str_title=getTitle(result)
 				str_des=getDescription(result)
 				str_img=getImage(result)
 				str_rd=getRelDate(result)
 				str_pub=getPublisher(result)
 				str_dev=getDeveloper(result)
-				lst_genres=getGenres(result)				
-					
-				if str_title is not None:			
+				lst_genres=getGenres(result)
+
+				if str_title is not None:
 					game = SubElement(gamelist, 'game')
 					path = SubElement(game, 'path')	
 					name = SubElement(game, 'name')	
 					desc = SubElement(game, 'desc')
 					image = SubElement(game, 'image')
-					releasedate = SubElement(game, 'releasedate')														
+					releasedate = SubElement(game, 'releasedate')
 					publisher=SubElement(game, 'publisher')
 					developer=SubElement(game, 'developer')
 					genres=SubElement(game, 'genres')
-					
+
 					path.text=filepath
 					name.text=str_title
 					print "Game Found: "+str_title
-	
-				if str_des is not None:						
+
+				if str_des is not None:
 					desc.text=str_des
-														
-				if str_img is not None and args.noimg is False:		
-					imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
-					print "Downloading boxart.."						
+
+				if str_img is not None and args.noimg is False:
+					if args.newpath is True:
+						imgpath="./" + filename+os.path.splitext(str_img)[1]
+					else:
+						imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
+
+					print "Downloading boxart.."
+
 					downloadBoxart(str_img,imgpath)
 					image.text=imgpath
-					
+
 					if args.w:
 						try:
-							resizeImage(Image.open(imgpath),imgpath)							
+							resizeImage(Image.open(imgpath),imgpath)
 						except:
 							print "Image resize error"
-											
+
 				if str_rd is not None:
 					releasedate.text=str_rd
-				
+
 				if str_pub is not None:
 					publisher.text=str_pub
-					
+
 				if str_dev is not None:
 					developer.text=str_dev
-					
+
 				if lst_genres is not None:
 					for genre in lst_genres:
 						newgenre = SubElement(genres, 'genre')
 						newgenre.text=genre.strip()
-	
+
 	if gamelist.find("game") is None:
 		print "No new games added."
 	else:
 		print "{} games added.".format(len(gamelist))
 		exportList(gamelist)
-  
+
 try:
 	if os.getuid()==0:
 		os.environ['HOME']="/home/"+os.getenv("SUDO_USER")
@@ -324,9 +339,9 @@ if args.v:
 if args.crc:
 	print "CRC scraping enabled."
 if args.p:
-	print "Partial scraping enabled. Systems found:"			
+	print "Partial scraping enabled. Systems found:"
 	for i,v in enumerate(ES_systems):
-		print "[{0}] {1}".format(i,v[0])	
+		print "[{0}] {1}".format(i,v[0])
 	try:
 		var = int(raw_input("System ID: "))
 		scanFiles(ES_systems[var])
@@ -335,5 +350,5 @@ if args.p:
 else:
 	for i,v in enumerate(ES_systems):
 		scanFiles(ES_systems[i])
-		
+
 print "All done!"

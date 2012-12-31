@@ -15,6 +15,7 @@ optional arguments:
   -crc        CRC scraping
   -p          partial scraping (per console)
   -m          manual mode (choose from multiple results)
+  -newpath    gamelist.xml & boxart are written in $HOME/.emulationstation/%NAME%/
 ```
 
 Quick script written in Python that uses various online sources to scrape artwork and game info and saves it as XML files to be read by EmulationStation.
@@ -32,6 +33,7 @@ Usage
 
 ```
 NAME=NES
+DESCNAME=Nintendo Entertainment System
 PATH=~/ROMS/NES/
 EXTENSION=.nes
 COMMAND=retroarch -L /path/to/core %ROM%
