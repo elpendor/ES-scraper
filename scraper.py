@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os, urllib, sys, Image, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
@@ -10,6 +11,7 @@ parser.add_argument("-f", help="force re-scraping (ignores and overwrites the cu
 parser.add_argument("-crc", help="CRC scraping", action='store_true')
 parser.add_argument("-p", help="partial scraping (per console)", action='store_true')
 parser.add_argument("-m", help="manual mode (choose from multiple results)", action='store_true')
+parser.add_argument('-newpath', help="gamelist & boxart are written in $HOME/.emulationstation/%%NAME%%/", action='store_true')
 args = parser.parse_args()
 
 def normalize(s):
@@ -198,7 +200,8 @@ def chooseResult(nodes):
 		return 0
 		
 def scanFiles(SystemInfo):
-	folder=SystemInfo[1]
+	name=SystemInfo[0]
+	folderRoms=SystemInfo[1]
 	extension=SystemInfo[2]
 	platformID=	SystemInfo[3]
 		
@@ -207,13 +210,20 @@ def scanFiles(SystemInfo):
 	gamelistExists = False	
 		
 	gamelist = Element('gameList')	  
-	print "Scanning folder..("+folder+")"
+	folderRoms = os.path.expanduser(folderRoms)
+
+	if args.newpath is False:
+		destinationFolder = folderRoms;
+	else:
+		destinationFolder = os.environ['HOME']+"/.emulationstation/"+name+"/"
 	
 	try:
-		os.chdir(os.path.expanduser(folder))		
+		os.chdir(destinationFolder)
 	except OSError as e:
-		print e.strerror
+		print destinationFolder + " : " + e.strerror
 		return
+	
+	print "Scanning folder..("+folderRoms+")"
 	
 	if os.path.exists("gamelist.xml"):			
 		try:
@@ -225,7 +235,7 @@ def scanFiles(SystemInfo):
 			gamelistExists=False
 			print "There was an error parsing the list or file is empty"
 					
-	for root, dirs, allfiles in os.walk("./"):
+	for root, dirs, allfiles in os.walk(folderRoms):
 		allfiles.sort()
 		for files in allfiles:
 			if files.endswith(tuple(extension.split(' '))):
@@ -272,8 +282,13 @@ def scanFiles(SystemInfo):
 					desc.text=str_des
 														
 				if str_img is not None and args.noimg is False:		
-					imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
+					if args.newpath is True:
+						imgpath="./" + filename+os.path.splitext(str_img)[1]
+					else:
+						imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
+
 					print "Downloading boxart.."						
+
 					downloadBoxart(str_img,imgpath)
 					image.text=imgpath
 					
