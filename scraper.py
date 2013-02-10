@@ -235,7 +235,7 @@ def scanFiles(SystemInfo):
 			gamelistExists=False
 			print "There was an error parsing the list or file is empty"
 
-	for root, dirs, allfiles in os.walk(folderRoms):
+	for root, dirs, allfiles in os.walk(folderRoms, followlinks=True):
 		allfiles.sort()
 		for files in allfiles:
 			if files.endswith(tuple(extension.split(' '))):
