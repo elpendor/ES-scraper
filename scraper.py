@@ -87,18 +87,18 @@ def getFiles(base):
 	return dict
 
 def getGameInfo(file,platformID):
-	filename=re.sub(r'\[.*?\]|\(.*?\)', '', os.path.splitext(file)[0]).strip()
+	title=re.sub(r'\[.*?\]|\(.*?\)', '', os.path.splitext(os.path.basename(file))[0]).strip()
 	if args.crc:
-		crcvalue=crc(os.path.abspath(file))
+		crcvalue=crc(file)
 		if args.v:
 			try:
-				print "CRC for {0}: ".format(file)+crcvalue
+				print "CRC for {0}: ".format(os.path.basename(file))+crcvalue
 			except zlib.error as e:
 				print e.strerror
 		URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
 	else:
 		platform= getPlatformName(platformID)
-		URL = "http://thegamesdb.net/api/GetGame.php?name="+filename+"&platform="+platform
+		URL = "http://thegamesdb.net/api/GetGame.php?name="+title+"&platform="+platform
 
 	try:
 		data=ET.parse(urllib.urlopen(URL)).getroot()
@@ -248,7 +248,7 @@ def scanFiles(SystemInfo):
 
 				print "Trying to identify {}..".format(files)
 
-				data=getGameInfo(files, platformID)
+				data=getGameInfo(filepath, platformID)
 				
 				if data is None:
 					continue
