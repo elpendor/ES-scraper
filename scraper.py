@@ -97,6 +97,7 @@ def getGameInfo(file,platformID):
                 print e.strerror
         URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
     else:
+        if platform == "Arcade": title = getRealArcadeTitle(title)
         platform= getPlatformName(platformID)
         URL = "http://thegamesdb.net/api/GetGame.php?name="+title+"&platform="+platform
 
@@ -131,8 +132,19 @@ def getGamePlatform(nodes):
         return getText(nodes.find("system_title"))
     else:
         return getText(nodes.find("Platform"))
-    
-    
+
+def getRealArcadeTitle(title):
+    print "Fetching real title for %s from mamedb.com" % title
+    URL  = "http://www.mamedb.com/game/%s" % title
+    data = "".join(urllib.urlopen(URL).readlines())
+    m    = re.search('<b>Name:.*</b>(.+) .*<br/><b>Year', data)
+    if m:
+       print "Found real title %s for %s on mamedb.com" % (m.group(1), title)
+       return m.group(1)
+    else:
+       print "No title found for %s on mamedb.com" % title
+       return title
+
 def getDescription(nodes):
     if args.crc:
         return getText(nodes.find("description"))
