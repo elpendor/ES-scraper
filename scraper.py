@@ -237,8 +237,8 @@ def scanFiles(SystemInfo):
 
     for root, dirs, allfiles in os.walk(folderRoms, followlinks=True):
         allfiles.sort()
-        for files in allfiles:
-            try:
+        try:
+            for files in allfiles:
                 if files.endswith(tuple(extension.split(' '))):
                     filepath=os.path.abspath(os.path.join(root, files))
                     filename = os.path.splitext(files)[0]
@@ -312,10 +312,10 @@ def scanFiles(SystemInfo):
                         for genre in lst_genres:
                             newgenre = SubElement(genres, 'genre')
                             newgenre.text=genre.strip()
-            except KeyboardInterrupt:
-                print "Ctrl+C detected. Closing work now..."
-            except Exception as e:
-                print "Exception caught! %s" % e
+        except KeyboardInterrupt:
+            print "Ctrl+C detected. Closing work now..."
+        except Exception as e:
+            print "Exception caught! %s" % e
 
     if gamelist.find("game") is None:
         print "No new games added."
