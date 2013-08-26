@@ -126,6 +126,13 @@ def getTitle(nodes):
     else:
         return getText(nodes.find("GameTitle"))
 
+def getGamePlatform(nodes):
+    if args.crc:
+        return getText(nodes.find("system_title"))
+    else:
+        return getText(nodes.find("Platform"))
+    
+    
 def getDescription(nodes):
     if args.crc:
         return getText(nodes.find("description"))
@@ -194,7 +201,7 @@ def chooseResult(nodes):
     results=nodes.findall('Game')
     if len(results) > 1:
         for i,v in enumerate(results):
-            print "[{}] {}".format(i,getTitle(v))
+            print "[{}] {} | {}".format(i,getTitle(v), getGamePlatform(v))
         return int(raw_input("Select a result (or press Enter to skip): "))
     else:
         return 0
