@@ -97,8 +97,8 @@ def getGameInfo(file,platformID):
                 print e.strerror
         URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
     else:
+        platform = getPlatformName(platformID)
         if platform == "Arcade": title = getRealArcadeTitle(title)
-        platform= getPlatformName(platformID)
         URL = "http://thegamesdb.net/api/GetGame.php?name="+title+"&platform="+platform
 
     try:
