@@ -108,8 +108,10 @@ def getGameInfo(file,platformID):
         return None
 
     try:
-        if args.crc and data.find("games/game") is not None:
-            return data.find("games/game")
+        if args.crc:
+            result = data.find("games/game")
+            if result is not None and result.find("title").text is not None:
+                return result
         elif data.find("Game") is not None:
             return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")
         else:
