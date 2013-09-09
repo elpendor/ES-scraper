@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, urllib, sys, Image, argparse, zlib, unicodedata, re
+import os, urllib2, sys, Image, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -62,7 +62,10 @@ def indent(elem, level=0):
             elem.tail = i
 
 def getPlatformName(id):
-    platform_data = ET.parse(urllib.urlopen("http://thegamesdb.net/api/GetPlatform.php?id="+id))
+    url = "http://thegamesdb.net/api/GetPlatform.php?id="+id
+    req = urllib2.Request(url, headers={'User-Agent' : "RetroPie Scraper Browser"})
+    data = urllib2.urlopen( req )
+    platform_data = ET.parse(data)
     return platform_data.find('Platform/Platform').text
 
 def exportList(gamelist):
@@ -102,7 +105,9 @@ def getGameInfo(file,platformID):
         URL = "http://thegamesdb.net/api/GetGame.php?name="+title+"&platform="+platform
 
     try:
-        data=ET.parse(urllib.urlopen(URL)).getroot()
+        req = urllib2.Request(URL, headers={'User-Agent' : "RetroPie Scraper Browser"})
+        remotedata = urllib2.urlopen( req )
+        data=ET.parse(remotedata).getroot()
     except ET.ParseError:
         print "Malformed XML found, skipping game.. (source: {})".format(URL)
         return None
@@ -138,7 +143,7 @@ def getGamePlatform(nodes):
 def getRealArcadeTitle(title):
     print "Fetching real title for %s from mamedb.com" % title
     URL  = "http://www.mamedb.com/game/%s" % title
-    data = "".join(urllib.urlopen(URL).readlines())
+    data = "".join(urllib2.urlopen(URL).readlines())
     m    = re.search('<b>Name:.*</b>(.+) .*<br/><b>Year', data)
     if m:
        print "Found real title %s for %s on mamedb.com" % (m.group(1), title)
@@ -215,7 +220,11 @@ def chooseResult(nodes):
     results=nodes.findall('Game')
     if len(results) > 1:
         for i,v in enumerate(results):
-            print "[{}] {} | {}".format(i,getTitle(v), getGamePlatform(v))
+            try:
+                print "[{}] {} | {}".format(i,getTitle(v), getGamePlatform(v))
+            except Exception as e:
+                print "Exception! %s" % e + getTitle(v) + getGamePlatform(v)
+
         return int(raw_input("Select a result (or press Enter to skip): "))
     else:
         return 0
@@ -271,7 +280,7 @@ def scanFiles(SystemInfo):
                     print "Trying to identify {}..".format(files)
 
                     data=getGameInfo(filepath, platformID)
-
+ 
                     if data is None:
                         continue
                     else:
