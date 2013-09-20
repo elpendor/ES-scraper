@@ -12,6 +12,7 @@ parser.add_argument("-crc", help="CRC scraping", action='store_true')
 parser.add_argument("-p", help="partial scraping (per console)", action='store_true')
 parser.add_argument("-m", help="manual mode (choose from multiple results)", action='store_true')
 parser.add_argument('-newpath', help="gamelist & boxart are written in $HOME/.emulationstation/%%NAME%%/", action='store_true')
+parser.add_argument('-fix', help="temporary thegamesdb missing platform fix", action='store_true')
 args = parser.parse_args()
 
 def normalize(s):
@@ -104,7 +105,17 @@ def getGameInfo(file,platformID):
         URL = "http://thegamesdb.net/api/GetGame.php"
         platform = getPlatformName(platformID)
         if platform == "Arcade": title = getRealArcadeTitle(title)            
-        values={'name':title,'platform':platform}
+        
+        if args.fix:
+            try:                
+                fixreq = urllib2.Request("http://thegamesdb.net/api/GetGamesList.php", urllib.urlencode({'name' : title, 'platform' : platform}), headers={'User-Agent' : "RetroPie Scraper Browser"})
+                fixdata=ET.parse(urllib2.urlopen(fixreq)).getroot()
+                if fixdata.find("Game") is not None:            
+                    values={ 'id': fixdata.findall("Game/id")[chooseResult(fixdata)].text if args.m else fixdata.find("Game/id").text }
+            except:
+                return None
+        else:
+            values={'name':title,'platform':platform}
 
     try:
         req = urllib2.Request(URL,urllib.urlencode(values), headers={'User-Agent' : "RetroPie Scraper Browser"})
