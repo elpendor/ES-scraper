@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, urllib2, sys, Image, argparse, zlib, unicodedata, re
+import os, urllib, urllib2, sys, Image, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -62,8 +62,8 @@ def indent(elem, level=0):
             elem.tail = i
 
 def getPlatformName(id):
-    url = "http://thegamesdb.net/api/GetPlatform.php?id="+id
-    req = urllib2.Request(url, headers={'User-Agent' : "RetroPie Scraper Browser"})
+    url = "http://thegamesdb.net/api/GetPlatform.php"
+    req = urllib2.Request(url, urllib.urlencode({'id':id}), headers={'User-Agent' : "RetroPie Scraper Browser"})
     data = urllib2.urlopen( req )
     platform_data = ET.parse(data)
     return platform_data.find('Platform/Platform').text
@@ -99,13 +99,15 @@ def getGameInfo(file,platformID):
             except zlib.error as e:
                 print e.strerror
         URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
+        values={}
     else:
+        URL = "http://thegamesdb.net/api/GetGame.php"
         platform = getPlatformName(platformID)
-        if platform == "Arcade": title = getRealArcadeTitle(title)
-        URL = "http://thegamesdb.net/api/GetGame.php?name="+title+"&platform="+platform
+        if platform == "Arcade": title = getRealArcadeTitle(title)            
+        values={'name':title,'platform':platform}
 
     try:
-        req = urllib2.Request(URL, headers={'User-Agent' : "RetroPie Scraper Browser"})
+        req = urllib2.Request(URL,urllib.urlencode(values), headers={'User-Agent' : "RetroPie Scraper Browser"})
         remotedata = urllib2.urlopen( req )
         data=ET.parse(remotedata).getroot()
     except ET.ParseError:
