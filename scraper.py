@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, urllib, urllib2, sys, Image, argparse, zlib, unicodedata, re
+import os, imghdr, urllib, urllib2, sys, Image, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -17,6 +17,11 @@ args = parser.parse_args()
 
 def normalize(s):
    return ''.join((c for c in unicodedata.normalize('NFKD', unicode(s)) if unicodedata.category(c) != 'Mn'))
+
+def fixExtension(file):    
+    newfile="%s.%s" % (os.path.splitext(file)[0],imghdr.what(file))
+    os.rename(file, newfile)
+    return newfile
 
 def readConfig(file):
     lines=config.read().splitlines()
@@ -334,6 +339,7 @@ def scanFiles(SystemInfo):
                         print "Downloading boxart.."
 
                         downloadBoxart(str_img,imgpath)
+                        imgpath=fixExtension(imgpath)
                         image.text=imgpath
 
                         if args.w:
