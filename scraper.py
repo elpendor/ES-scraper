@@ -75,11 +75,11 @@ def exportList(gamelist):
 
         indent(existinglist.getroot())
         ET.ElementTree(existinglist.getroot()).write("gamelist.xml")
-        print "Done! {} updated.".format(os.getcwd()+"/gamelist.xml")
+        print "Done! %s updated." % os.getcwd()+"/gamelist.xml"
     else:
         indent(gamelist)
         ET.ElementTree(gamelist).write("gamelist.xml")
-        print "Done! List saved on {}".format(os.getcwd()+"/gamelist.xml")
+        print "Done! List saved on %s" % os.getcwd()+"/gamelist.xml"
 
 def getFiles(base):
     dict=set([])
@@ -95,10 +95,10 @@ def getGameInfo(file,platformID):
         crcvalue=crc(file)
         if args.v:
             try:
-                print "CRC for {0}: ".format(os.path.basename(file))+crcvalue
+                print "CRC for %s: %s" % (os.path.basename(file), crcvalue)
             except zlib.error as e:
                 print e.strerror
-        URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/"+crcvalue
+        URL = "http://api.archive.vg/2.0/Game.getInfoByCRC/xml/7TTRM4MNTIKR2NNAGASURHJOZJ3QXQC5/%s" % crcvalue
         values={}
     else:
         URL = "http://thegamesdb.net/api/GetGame.php"
@@ -111,7 +111,7 @@ def getGameInfo(file,platformID):
         remotedata = urllib2.urlopen( req )
         data=ET.parse(remotedata).getroot()
     except ET.ParseError:
-        print "Malformed XML found, skipping game.. (source: {})".format(URL)
+        print "Malformed XML found, skipping game.. (source: {%s})" % URL
         return None
 
     try:
@@ -124,7 +124,7 @@ def getGameInfo(file,platformID):
         else:
             return None
     except Exception, err:
-        print "Skipping game..({})".format(str(err))
+        print "Skipping game..(%s)" % str(err)
         return None
 
 def getText(node):
@@ -201,21 +201,21 @@ def getGenres(nodes):
 def resizeImage(img,output):
     maxWidth= args.w
     if (img.size[0]>maxWidth):
-        print "Boxart over {}px. Resizing boxart..".format(maxWidth)
+        print "Boxart over %spx. Resizing boxart.." % maxWidth
         height = int((float(img.size[1])*float(maxWidth/float(img.size[0]))))
         img.resize((maxWidth,height), Image.ANTIALIAS).save(output)
 
 def downloadBoxart(path,output):
     if args.crc:
-        os.system("wget -q {} --output-document=\"{}\"".format(path,output))
+        os.system("wget -q %s --output-document=\"%s\"" % (path,output))
     else:
-        os.system("wget -q http://thegamesdb.net/banners/{} --output-document=\"{}\"".format(path,output))
+        os.system("wget -q http://thegamesdb.net/banners/%s --output-document=\"%s\"" % (path,output))
 
 def skipGame(list, filepath):
     for game in list.iter("game"):
         if game.findtext("path")==filepath:
             if args.v:
-                print "Game \"{}\" already in gamelist. Skipping..".format(os.path.basename(filepath))
+                print "Game \"%s\" already in gamelist. Skipping.." % os.path.basename(filepath)
             return True
 
 def chooseResult(nodes):
@@ -223,9 +223,9 @@ def chooseResult(nodes):
     if len(results) > 1:
         for i,v in enumerate(results):
             try:
-                print "[{}] {} | {}".format(i,getTitle(v), getGamePlatform(v))
+                print "[%s] %s | %s" % (i,getTitle(v), getGamePlatform(v))
             except Exception as e:
-                print "Exception! %s" % e + getTitle(v) + getGamePlatform(v)
+                print "Exception! %s %s %s" % (e, getTitle(v), getGamePlatform(v))
 
         return int(raw_input("Select a result (or press Enter to skip): "))
     else:
@@ -247,22 +247,22 @@ def scanFiles(SystemInfo):
     if args.newpath is False:
         destinationFolder = folderRoms;
     else:
-        destinationFolder = os.environ['HOME']+"/.emulationstation/"+name+"/"
+        destinationFolder = os.environ['HOME']+"/.emulationstation/%s/" % name
 
     try:
         os.chdir(destinationFolder)
     except OSError as e:
-        print destinationFolder + " : " + e.strerror
+        print "%s : %s" % (destinationFolder, e.strerror)
         return
 
-    print "Scanning folder..("+folderRoms+")"
+    print "Scanning folder..(%s)" % folderRoms
 
     if os.path.exists("gamelist.xml"):
         try:
             existinglist=ET.parse("gamelist.xml")
             gamelistExists=True
             if args.v:
-                print "Gamelist already exists: {}".format(os.path.abspath("gamelist.xml"))
+                print "Gamelist already exists: %s" % os.path.abspath("gamelist.xml")
         except:
             gamelistExists=False
             print "There was an error parsing the list or file is empty"
@@ -279,7 +279,7 @@ def scanFiles(SystemInfo):
                         if skipGame(existinglist,filepath):
                             continue
 
-                    print "Trying to identify {}..".format(files)
+                    print "Trying to identify %s.." % files
 
                     data=getGameInfo(filepath, platformID)
  
@@ -309,7 +309,7 @@ def scanFiles(SystemInfo):
 
                         path.text=filepath
                         name.text=str_title
-                        print "Game Found: "+str_title
+                        print "Game Found: %s" % str_title
 
                     if str_des is not None:
                         desc.text=str_des
@@ -360,13 +360,13 @@ try:
         os.environ['HOME']="/home/"+os.getenv("SUDO_USER")
     config=open(os.environ['HOME']+"/.emulationstation/es_systems.cfg")
 except IOError as e:
-    sys.exit("Error when reading config file: {0}".format(e.strerror)+"\nExiting..")
+    sys.exit("Error when reading config file: %s \nExiting.." % e.strerror)
 
 ES_systems=readConfig(config)
 print parser.description
 
 if args.w:
-    print "Max width set: {}px.".format(str(args.w))
+    print "Max width set: %spx." % str(args.w)
 if args.noimg:
     print "Boxart downloading disabled."
 if args.f:
@@ -378,7 +378,7 @@ if args.crc:
 if args.p:
     print "Partial scraping enabled. Systems found:"
     for i,v in enumerate(ES_systems):
-        print "[{0}] {1}".format(i,v[0])
+        print "[%s] %s" % (i,v[0])
     try:
         var = int(raw_input("System ID: "))
         scanFiles(ES_systems[var])
