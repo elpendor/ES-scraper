@@ -285,25 +285,25 @@ def scanFiles(SystemInfo):
 
     for root, dirs, allfiles in os.walk(folderRoms, followlinks=True):
         allfiles.sort()
-        try:
-            for files in allfiles:
-                if files.endswith(tuple(extension.split(' '))):
+        for files in allfiles:
+            if files.endswith(tuple(extension.split(' '))):
+                try:
                     filepath=os.path.abspath(os.path.join(root, files))
                     filename = os.path.splitext(files)[0]
-
+    
                     if gamelistExists and not args.f:
                         if skipGame(existinglist,filepath):
                             continue
-
+    
                     print "Trying to identify %s.." % files
-
+    
                     data=getGameInfo(filepath, platformID)
- 
+     
                     if data is None:
                         continue
                     else:
                         result=data
-
+    
                     str_title=getTitle(result)
                     str_des=getDescription(result)
                     str_img=getImage(result)
@@ -311,7 +311,7 @@ def scanFiles(SystemInfo):
                     str_pub=getPublisher(result)
                     str_dev=getDeveloper(result)
                     lst_genres=getGenres(result)
-
+    
                     if str_title is not None:
                         game = SubElement(gamelist, 'game')
                         path = SubElement(game, 'path')
@@ -322,49 +322,49 @@ def scanFiles(SystemInfo):
                         publisher=SubElement(game, 'publisher')
                         developer=SubElement(game, 'developer')
                         genres=SubElement(game, 'genres')
-
+    
                         path.text=filepath
                         name.text=str_title
                         print "Game Found: %s" % str_title
-
+    
                     if str_des is not None:
                         desc.text=str_des
-
+    
                     if str_img is not None and args.noimg is False:
                         if args.newpath is True:
                             imgpath="./" + filename+os.path.splitext(str_img)[1]
                         else:
                             imgpath=os.path.abspath(os.path.join(root, filename+os.path.splitext(str_img)[1]))
-
+    
                         print "Downloading boxart.."
-
+    
                         downloadBoxart(str_img,imgpath)
                         imgpath=fixExtension(imgpath)
                         image.text=imgpath
-
+    
                         if args.w:
                             try:
                                 resizeImage(Image.open(imgpath),imgpath)
                             except:
                                 print "Image resize error"
-
+    
                     if str_rd is not None:
                         releasedate.text=str_rd
-
+    
                     if str_pub is not None:
                         publisher.text=str_pub
-
+    
                     if str_dev is not None:
                         developer.text=str_dev
-
+    
                     if lst_genres is not None:
                         for genre in lst_genres:
                             newgenre = SubElement(genres, 'genre')
                             newgenre.text=genre.strip()
-        except KeyboardInterrupt:
-            print "Ctrl+C detected. Closing work now..."
-        except Exception as e:
-            print "Exception caught! %s" % e
+                except KeyboardInterrupt:
+                    print "Ctrl+C detected. Closing work now..."
+                except Exception as e:
+                    print "Exception caught! %s" % e
 
     if gamelist.find("game") is None:
         print "No new games added."
