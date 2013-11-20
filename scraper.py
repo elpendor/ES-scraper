@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, imghdr, urllib, urllib2, sys, Image, argparse, zlib, unicodedata, re
+import os, imghdr, urllib, urllib2, sys, PIL, argparse, zlib, unicodedata, re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
