@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import os, imghdr, urllib, urllib2, sys, PIL, argparse, zlib, unicodedata, re
+import os, imghdr, urllib, urllib2, sys, Image, argparse, zlib, unicodedata, re
+import difflib
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -109,14 +110,17 @@ def getGameInfo(file,platformID):
     else:
         URL = "http://thegamesdb.net/api/GetGame.php"
         platform = getPlatformName(platformID)
-        if platform == "Arcade": title = getRealArcadeTitle(title)            
+        if platform == "Arcade" or platform == "NeoGeo": title = getRealArcadeTitle(title)            
         
         if args.fix:
             try:                
                 fixreq = urllib2.Request("http://thegamesdb.net/api/GetGamesList.php", urllib.urlencode({'name' : title, 'platform' : platform}), headers={'User-Agent' : "RetroPie Scraper Browser"})
                 fixdata=ET.parse(urllib2.urlopen(fixreq)).getroot()
-                if fixdata.find("Game") is not None:            
-                    values={ 'id': fixdata.findall("Game/id")[chooseResult(fixdata)].text if args.m else fixdata.find("Game/id").text }
+                if fixdata.find("Game") is not None:        
+
+                    #values={ 'id': fixdata.findall("Game/id")[chooseResult(fixdata)].text if args.m else fixdata.find("Game/id").text }
+                    values={ 'id': fixdata.findall("Game/id")[chooseResult(fixdata)].text if args.m else fixdata.findall("Game/id")[autoChooseBestResult(fixdata,title)].text }
+					
             except:
                 return None
         else:
@@ -136,7 +140,7 @@ def getGameInfo(file,platformID):
             if result is not None and result.find("title").text is not None:
                 return result
         elif data.find("Game") is not None:
-            return data.findall("Game")[chooseResult(data)] if args.m else data.find("Game")
+            return data.findall("Game")[chooseResult(data)] if args.m else data.findall("Game")[autoChooseBestResult(data,title)]
         else:
             return None
     except Exception, err:
@@ -244,6 +248,34 @@ def chooseResult(nodes):
                 print "Exception! %s %s %s" % (e, getTitle(v), getGamePlatform(v))
 
         return int(raw_input("Select a result (or press Enter to skip): "))
+    else:
+        return 0
+		
+		
+def autoChooseBestResult(nodes,t):
+    results=nodes.findall('Game')
+    t = t.split('(', 1)[0]
+    if len(results) > 1:
+
+        sep = ' |' # remove platform name
+        lista = []
+        listb = []
+        listc = []
+        for i,v in enumerate(results): # Do it backwards to eliminate false positives
+            a = (str(getTitle(v).split(sep, 1)[0]).split('(', 1)[0])
+            lista.append(a)
+            listb.append(i)
+        listc = list(lista)
+        listc.sort(key = len)
+        x = 0
+        for n in reversed(listc):
+            s = difflib.SequenceMatcher(None, t, lista[lista.index(n)]).ratio()
+            if s > x:
+                x = s
+                xx = lista.index(n)
+        ss = int(x * 100)
+        print "Game Title Found  " + str(ss) + "% Chance : " + lista[xx]
+        return xx
     else:
         return 0
 
