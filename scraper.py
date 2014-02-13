@@ -4,6 +4,8 @@ import difflib
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
+SCUMMVM = False
+
 parser = argparse.ArgumentParser(description='ES-scraper, a scraper for EmulationStation')
 parser.add_argument("-w", metavar="value", help="defines a maximum width (in pixels) for boxarts (anything above that will be resized to that value)", type=int)
 parser.add_argument("-noimg", help="disables boxart downloading", action='store_true')
@@ -110,7 +112,10 @@ def getGameInfo(file,platformID):
     else:
         URL = "http://thegamesdb.net/api/GetGame.php"
         platform = getPlatformName(platformID)
-        if platform == "Arcade" or platform == "NeoGeo": title = getRealArcadeTitle(title)            
+        if SCUMMVM: 
+            title = getScummvmTitle(title)
+            args.fix = True #Scummvm doesn't have a proper platformID so we search all
+        if platform == "Arcade" or platform == "NeoGeo": title = getRealArcadeTitle(title)		
         
         if args.fix:
             try:                
@@ -161,6 +166,18 @@ def getGamePlatform(nodes):
         return getText(nodes.find("system_title"))
     else:
         return getText(nodes.find("Platform"))
+		
+def getScummvmTitle(title):
+    print "Fetching real title for %s from scummvm.org" % title
+    URL  = "http://scummvm.org/compatibility/DEV/%s" % title.split("-")[0]
+    data = "".join(urllib2.urlopen(URL).readlines())
+    m    = re.search('<td>(.*)</td>', data)
+    if m:
+       print "Found real title %s for %s on scummvm.org" % (m.group(1), title)
+       return m.groups()[0]
+    else:
+       print "No title found for %s on scummvm.org" % title
+       return title		
 
 def getRealArcadeTitle(title):
     print "Fetching real title for %s from mamedb.com" % title
@@ -281,6 +298,9 @@ def autoChooseBestResult(nodes,t):
 
 def scanFiles(SystemInfo):
     name=SystemInfo[0]
+    if name == "scummvm":
+        global SCUMMVM
+        SCUMMVM = True
     folderRoms=SystemInfo[1]
     extension=SystemInfo[2]
     platformID=SystemInfo[3]
@@ -296,7 +316,6 @@ def scanFiles(SystemInfo):
         destinationFolder = folderRoms;
     else:
         destinationFolder = os.environ['HOME']+"/.emulationstation/%s/" % name
-
     try:
         os.chdir(destinationFolder)
     except OSError as e:
